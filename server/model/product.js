@@ -1,6 +1,8 @@
 // const validator = require('validator');
 // const _ = require('lodash');
 // const config = require('config');
+const Joi = require('joi');
+
 const { mongoose } = require('./../db/mongoose');
 
 let productSchema = new mongoose.Schema({
@@ -72,8 +74,19 @@ let productSchema = new mongoose.Schema({
     tags: [String]
 });
 
+
+const validate = product => {
+    const schema = {
+        fullname: Joi.string().required(),
+        price: Joi.number().required()
+    };
+
+    return Joi.validate(product, schema);
+};
+
 let Product = mongoose.model('Product', productSchema);
 
 module.exports = {
-    Product
+    Product,
+    validate
 };
