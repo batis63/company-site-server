@@ -43,25 +43,28 @@ let productSchema = new mongoose.Schema({
         required: true,
         minlength: 3
     },
-    size: [
-        {
-            width: {
-                _id: false,
-                type: Number,
-                require: false
-            },
-            height: {
-                _id: false,
-                type: Number,
-                require: false
-            },
-            depth: {
-                _id: false,
-                type: Number,
-                require: false
-            }
+    size: {
+        width: {
+            _id: false,
+            type: String,
+            require: false
+        },
+        height: {
+            _id: false,
+            type: String,
+            require: false
+        },
+        depth: {
+            _id: false,
+            type: String,
+            require: false
+        },
+        perforation: {
+            _id: false,
+            type: String,
+            require: false
         }
-    ],
+    },
     insertdate: {
         type: Date,
         required: true,
@@ -71,9 +74,18 @@ let productSchema = new mongoose.Schema({
         type: String,
         required: false
     },
-    tags: [String]
+    tags: [String],
+    countinpackage: {
+        type: String,
+        required: true,
+        default: 1
+    },
+    deliverytime: {
+        type: String,
+        required: true,
+        default: '1 تا 3 روز کاری'
+    }
 });
-
 
 const validate = product => {
     const schema = {
