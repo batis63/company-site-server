@@ -9,6 +9,7 @@ const winston = require('winston');
 const _ = require('lodash');
 const Joi = require('joi');
 const products = require('./routes/products');
+const users = require('./routes/users');
 const app = express();
 const publicImages = express.static(join(__dirname, './images'));
 
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(helmet());
 
 app.use('/api/products', products);
+app.use('/api/user', users);
 app.use('/images', publicImages);
 
 
