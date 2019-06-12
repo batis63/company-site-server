@@ -1,7 +1,11 @@
 //const validator = require('validator');
 const Joi = require('joi');
-var nodemailer = require('nodemailer');
+const _ = require('lodash');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const { mongoose } = require('./../db/mongoose');
+const config = require('config');
+const bcrypt = require('bcrypt');
 
 let userSchema = new mongoose.Schema({
     first_name: {
@@ -14,19 +18,12 @@ let userSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    username: {
-        type: String,
-        required: true,
-        trim: true,
-        minlength: 5,
-        maxlength: 255
-    },
     password: {
         type: String,
         required: true,
         trim: true,
         minlength: 5,
-        maxlength: 30
+        maxlength: 1024
     },
     user_type: {
         type: String,
@@ -35,22 +32,16 @@ let userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: false,
+        required: true,
         unique: true,
         trim: true,
         minlength: 5,
         maxlength: 255
     },
-    token: {
-        _id: false,
-        token_key: {
-            type: String,
-            trim: true,
-            required: false
-        },
-        token_expire: {
-            type: Date
-        }
+    token_key: {
+        type: String,
+        required: false,
+        trim: true
     },
     addresses: [
         {
@@ -97,42 +88,22 @@ let userSchema = new mongoose.Schema({
     }
 });
 
-const validate = user => {
+const validatePassword = user => {
     const schema = {
-        username: Joi.string()
-            .min(5)
-            .max(255)
-            .required(),
-        last_name: Joi.string()
-            .min(5)
-            .max(255)
-            .required(),
-        first_name: Joi.string()
-            .min(5)
-            .max(255)
-            .required(),
         password: Joi.string()
             .min(5)
-            .max(255)
+            .max(30)
             .required(),
-        email: Joi.string()
+        newPassword: Joi.string()
             .min(5)
-            .max(255)
-            .email(),
-        tel: Joi.string()
-            .min(11)
-            .max(11),
-        mobile: Joi.string()
-            .min(11)
-            .max(11)
+            .max(30)
             .required()
     };
 
     return Joi.validate(user, schema);
 };
 
-userSchema.pre('save', function(next) {
-    let user = this;
+const sendMail = (type,user) => {
     var transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
@@ -146,14 +117,24 @@ userSchema.pre('save', function(next) {
             rejectUnauthorized: false
         }
     });
+    let html = '';
 
+    switch (type) {
+        case 'signup':
+            html = `<h1>کاربر گرامی  ثبت نام شما با موفقیت انجام شد</h1>`;
+            break;
+
+        case 'changepassword':
+            html = `<h1>کاربر گرامی تغییر رمز شما با موفقیت انجام شد</h1>`;
+            break;
+        default:
+            break;
+    }
     var mailOptions = {
         from: 'najafianmorteza@gmail.com',
         to: user.email,
         subject: 'به سایت ما خوش آمدید',
-        html: `<h1>کاربر گرامی ${
-            user.first_name
-        } ثبت نام شما با موفقیت انجام شد</h1>`,
+        html: html,
         attachments: [
             {
                 // filename and content type is derived from path
@@ -162,7 +143,6 @@ userSchema.pre('save', function(next) {
             }
         ]
     };
-
     transporter.sendMail(mailOptions, function(error, info) {
         if (error) {
             console.log(error);
@@ -170,12 +150,91 @@ userSchema.pre('save', function(next) {
             console.log('Email sent: ' + info.response);
         }
     });
-    next();
-});
+};
+
+const validate = user => {
+    const schema = {
+        last_name: Joi.string()
+            .min(5)
+            .max(255)
+            .required(),
+        first_name: Joi.string()
+            .min(5)
+            .max(255)
+            .required(),
+        password: Joi.string()
+            .min(5)
+            .max(30)
+            .required(),
+        email: Joi.string()
+            .min(5)
+            .max(255)
+            .email()
+            .required(),
+        tel: Joi.string()
+            .min(11)
+            .max(11),
+        mobile: Joi.string()
+            .min(11)
+            .max(11)
+            .required()
+    };
+
+    return Joi.validate(user, schema);
+};
+
+//جهت ارسال اطلاعاتی که باید برگشت داده شود
+userSchema.methods.toJSON = function() {
+    let user = this;
+    let userObject = user.toObject();
+
+    return _.pick(userObject, ['_id', 'first_name', 'last_name', 'email']);
+};
+
+userSchema.statics.findByToken = function(token) {
+    let User = this;
+    let decoded;
+
+    try {
+        decoded = jwt.verify(token, config.get('JWT_SECRET'));
+    } catch (e) {
+        return Promise.reject();
+    }
+
+    let user = User.findOne({
+        _id: decoded._id,
+        token_key: token
+    });
+    if (!user) {
+        return Promise.reject();
+    }
+    return user;
+};
+
+userSchema.methods.generateAuthToken = function() {
+    let user = this;
+    const token = jwt.sign(
+        { _id: user._id.toHexString() },
+        config.get('JWT_SECRET')
+    );
+
+    user.token_key = token;
+    return user.save().then(() => {
+        return token;
+    });
+};
+
+// userSchema.pre('save', function(next) {
+//     let user = this;
+
+//     next();
+// });
 
 let User = mongoose.model('User', userSchema);
 
 module.exports = {
     User,
-    validate
+    validate,
+    validatePassword,
+    sendMail
 };
