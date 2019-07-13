@@ -16,7 +16,7 @@ const publicImages = express.static(join(__dirname, './images'));
 
 app.use(express.json());
 app.use(helmet());
-
+app.set('view engine', 'html');
 app.use('/api/products', products);
 app.use('/api/users', users);
 app.use('/images', publicImages);

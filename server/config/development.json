@@ -2,5 +2,6 @@
     "Level": "development",
     "PORT": 4000,
     "MONGOURI": "mongodb://localhost:27017/company_site",
-    "JWT_SECRET": "sohaNiloofar"
+    "JWT_SECRET": "sohaNiloofar",
+    "JWT_SECRET_FORGOT_PASSWORD":"NILIFP"
 }

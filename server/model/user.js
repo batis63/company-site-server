@@ -3,9 +3,13 @@ const Joi = require('joi');
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const hbs = require('nodemailer-express-handlebars');
 const { mongoose } = require('./../db/mongoose');
 const config = require('config');
 const bcrypt = require('bcrypt');
+const email = process.env.EMAIL || 'najafianmorteza@gmail.com';
+const pass = process.env.EMAIL_PASSWORD || 'Niloofar1026911';
+const path = require('path');
 
 let userSchema = new mongoose.Schema({
     first_name: {
@@ -42,6 +46,15 @@ let userSchema = new mongoose.Schema({
         type: String,
         required: false,
         trim: true
+    },
+    reset_password_token: {
+        type: String,
+        required: false,
+        trim: true
+    },
+    reset_password_expires: {
+        type: Date,
+        required: false
     },
     addresses: [
         {
@@ -88,6 +101,17 @@ let userSchema = new mongoose.Schema({
     }
 });
 
+const validateEmail = user => {
+    const schema = {
+        email: Joi.string()
+            .required()
+            .min(3)
+            .max(255)
+            .email()
+    };
+    return Joi.validate(email, schema);
+};
+
 const validatePassword = user => {
     const schema = {
         password: Joi.string()
@@ -103,20 +127,32 @@ const validatePassword = user => {
     return Joi.validate(user, schema);
 };
 
-const sendMail = (type,user) => {
+const validatePasswordWhenReset = user => {
+    const schema = {
+        newPassword: Joi.string()
+            .min(5)
+            .max(30)
+            .required()
+    };
+
+    return Joi.validate(user, schema);
+};
+
+const sendMail = (type, user) => {
     var transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
         secure: false, // true for 465, false for other ports
         auth: {
-            user: 'najafianmorteza@gmail.com',
-            pass: 'Niloofar1026911'
+            user: email,
+            pass
         },
         tls: {
             // do not fail on invalid certs
             rejectUnauthorized: false
         }
     });
+
     let html = '';
 
     switch (type) {
@@ -134,19 +170,78 @@ const sendMail = (type,user) => {
         from: 'najafianmorteza@gmail.com',
         to: user.email,
         subject: 'به سایت ما خوش آمدید',
-        html: html,
-        attachments: [
-            {
-                // filename and content type is derived from path
-                filename: 'img1.jpg',
-                path: 'http://localhost:4000/images/img1.jpg'
-            }
-        ]
+        html: html
+        // attachments: [
+        //     {
+        //         // filename and content type is derived from path
+        //         filename: 'img1.jpg',
+        //         path: 'http://localhost:4000/images/img1.jpg'
+        //     }
+        // ]
     };
     transporter.sendMail(mailOptions, function(error, info) {
         if (error) {
             console.log(error);
         } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+};
+
+const sendForgotEmail = user => {
+    var transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+            user: email,
+            pass
+        },
+        tls: {
+            // do not fail on invalid certs
+            rejectUnauthorized: false
+        }
+    });
+
+    var handlebarsOptions = {
+        viewEngine: {
+            extName: '.handlebars',
+            partialsDir: path.resolve(__dirname, '../templates'),
+            layoutsDir: path.resolve(__dirname, '../templates'),
+            defaultLayout:'forgot-password-email.handlebars'
+        },
+        //viewEngine: 'handlebars',
+        viewPath: path.resolve(__dirname, '../templates'),
+        extName: '.handlebars'
+    };
+
+    transporter.use('compile', hbs(handlebarsOptions));
+
+    const token = jwt.sign(
+        { _id: user._id.toHexString() },
+        config.get('JWT_SECRET_FORGOT_PASSWORD')
+    );
+
+
+
+    var mailOptions = {
+        from: email,
+        to: user.email,
+        template: 'forgot-password-email',
+        subject: 'بازیابی رمز عبور',
+        context: {
+            url: 'http://localhost:3000/resetpassword?token=' + token,
+            name: user.first_name
+        }
+    };
+    transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            var date = new Date();
+            user.reset_password_token = token;
+            user.reset_password_expires = date.setDate(date.getDate() + 7);
+            user.save();
             console.log('Email sent: ' + info.response);
         }
     });
@@ -236,5 +331,8 @@ module.exports = {
     User,
     validate,
     validatePassword,
-    sendMail
+    sendMail,
+    validateEmail,
+    sendForgotEmail,
+    validatePasswordWhenReset
 };
