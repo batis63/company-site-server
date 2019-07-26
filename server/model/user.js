@@ -6,7 +6,6 @@ const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const { mongoose } = require('./../db/mongoose');
 const config = require('config');
-const bcrypt = require('bcrypt');
 const email = process.env.EMAIL || 'najafianmorteza@gmail.com';
 const pass = process.env.EMAIL_PASSWORD || 'Niloofar1026911';
 const path = require('path');
@@ -58,30 +57,42 @@ let userSchema = new mongoose.Schema({
     },
     addresses: [
         {
-            address_data: {
-                _id: false,
-                province_name: {
-                    type: String,
-                    trim: true,
-                    required: false
-                },
-                city_name: {
-                    type: String,
-                    trim: true,
-                    required: false
-                },
-                address: {
-                    type: String,
-                    trim: true,
-                    minlength: 5,
-                    maxlength: 255,
-                    required: false
-                },
-                postal_code: {
-                    type: String,
-                    required: false,
-                    trim: true
-                }
+            province_name: {
+                type: String,
+                trim: true,
+                required: false
+            },
+            city_name: {
+                type: String,
+                trim: true,
+                required: false
+            },
+            address: {
+                type: String,
+                trim: true,
+                minlength: 5,
+                maxlength: 255,
+                required: false
+            },
+            postal_code: {
+                type: String,
+                required: false,
+                trim: true
+            },
+            receiver_mobile: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            receiver_first_name: {
+                type: String,
+                required: true,
+                trim: true
+            },
+            receiver_last_name: {
+                type: String,
+                required: true,
+                trim: true
             }
         }
     ],
@@ -100,6 +111,39 @@ let userSchema = new mongoose.Schema({
         required: true
     }
 });
+
+const validateAddress = model => {
+    const schema = {
+        province_name: Joi.string()
+            .required()
+            .min(2)
+            .max(255),
+        city_name: Joi.string()
+            .required()
+            .min(2)
+            .max(255),
+        address: Joi.string()
+            .required()
+            .min(2)
+            .max(255),
+        postal_code: Joi.string()
+            .min(10)
+            .max(10),
+        receiver_mobile: Joi.string()
+            .required()
+            .min(11)
+            .max(11),
+        receiver_first_name: Joi.string()
+            .required()
+            .min(2)
+            .max(255),
+        receiver_last_name: Joi.string()
+            .required()
+            .min(2)
+            .max(255)
+    };
+    return Joi.validate(model, schema);
+};
 
 const validateEmail = user => {
     const schema = {
@@ -163,6 +207,11 @@ const sendMail = (type, user) => {
         case 'changepassword':
             html = `<h1>کاربر گرامی تغییر رمز شما با موفقیت انجام شد</h1>`;
             break;
+
+        case 'editInformation':
+            html = `<h1>کاربر گرامی اطلاعات کاربری شما با موفقیت ویرایش شد</h1>`;
+            break;
+
         default:
             break;
     }
@@ -208,7 +257,7 @@ const sendForgotEmail = user => {
             extName: '.handlebars',
             partialsDir: path.resolve(__dirname, '../templates'),
             layoutsDir: path.resolve(__dirname, '../templates'),
-            defaultLayout:'forgot-password-email.handlebars'
+            defaultLayout: 'forgot-password-email.handlebars'
         },
         //viewEngine: 'handlebars',
         viewPath: path.resolve(__dirname, '../templates'),
@@ -221,8 +270,6 @@ const sendForgotEmail = user => {
         { _id: user._id.toHexString() },
         config.get('JWT_SECRET_FORGOT_PASSWORD')
     );
-
-
 
     var mailOptions = {
         from: email,
@@ -278,12 +325,48 @@ const validate = user => {
     return Joi.validate(user, schema);
 };
 
+const validateWhenEdit = user => {
+    const schema = {
+        last_name: Joi.string()
+            .min(5)
+            .max(255)
+            .required(),
+        first_name: Joi.string()
+            .min(5)
+            .max(255)
+            .required(),
+
+        email: Joi.string()
+            .min(5)
+            .max(255)
+            .email()
+            .required(),
+        tel: Joi.string()
+            .min(11)
+            .max(11),
+        mobile: Joi.string()
+            .min(11)
+            .max(11)
+            .required()
+    };
+
+    return Joi.validate(user, schema);
+};
+
 //جهت ارسال اطلاعاتی که باید برگشت داده شود
 userSchema.methods.toJSON = function() {
     let user = this;
     let userObject = user.toObject();
 
-    return _.pick(userObject, ['_id', 'first_name', 'last_name', 'email']);
+    return _.pick(userObject, [
+        '_id',
+        'first_name',
+        'last_name',
+        'email',
+        'tel',
+        'mobile',
+        'addresses'
+    ]);
 };
 
 userSchema.statics.findByToken = function(token) {
@@ -334,5 +417,7 @@ module.exports = {
     sendMail,
     validateEmail,
     sendForgotEmail,
-    validatePasswordWhenReset
+    validatePasswordWhenReset,
+    validateWhenEdit,
+    validateAddress
 };

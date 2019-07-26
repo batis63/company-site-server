@@ -9,7 +9,9 @@ const {
     sendMail,
     validateEmail,
     sendForgotEmail,
-    validatePasswordWhenReset
+    validatePasswordWhenReset,
+    validateWhenEdit,
+    validateAddress
 } = require('../model/user');
 
 router.post('/signup', async (req, res) => {
@@ -42,7 +44,9 @@ router.post('/signup', async (req, res) => {
 });
 
 router.post('/resetpassword', async (req, res) => {
-    const { error } = validatePasswordWhenReset({newPassword:req.body.newPassword});
+    const { error } = validatePasswordWhenReset({
+        newPassword: req.body.newPassword
+    });
     if (error) return res.status(400).send(error.details[0].message);
 
     try {
@@ -132,6 +136,130 @@ router.post('/changepassword', async (req, res) => {
                 sendMail('changepassword', user);
             }
         );
+    } catch (error) {
+        return res.status(400).send('token is expired');
+    }
+});
+
+router.get('/getUserInformation', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        res.status(200).send(user);
+    } catch (error) {
+        return res.status(400).send('token is expired');
+    }
+});
+
+router.post('/editUserInformation', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    const { error } = validateWhenEdit(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    let model = {
+        first_name: req.body.first_name,
+        last_name: req.body.last_name,
+        email: req.body.email,
+        tel: req.body.tel,
+        mobile: req.body.mobile
+    };
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+
+        User.findByIdAndUpdate(user._id, {
+            first_name: model.first_name,
+            last_name: model.last_name,
+            email: model.email,
+            tel: model.tel,
+            mobile: model.mobile
+        }).then(() => {
+            res.status(200).send(user);
+            sendMail('editInformation', user);
+        });
+    } catch (error) {
+        return res.status(400).send('token is expired');
+    }
+});
+
+router.post('/editaddress', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    const { error } = validateAddress(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const addressId = req.query.id;
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+
+        User.update(
+            { _id: user._id, 'addresses._id': addressId },
+            {
+                $set: {
+                    'addresses.$.province_name': req.body.province_name,
+                    'addresses.$.city_name': req.body.city_name,
+                    'addresses.$.address': req.body.address,
+                    'addresses.$.postal_code': req.body.postal_code,
+                    'addresses.$.receiver_mobile': req.body.receiver_mobile,
+                    'addresses.$.receiver_first_name':
+                        req.body.receiver_first_name,
+                    'addresses.$.receiver_last_name':
+                        req.body.receiver_last_name
+                }
+            }
+        ).then(() => {
+            res.status(200).send('تغییرات با موفقیت انجام شد');
+        });
+    } catch (error) {
+        return res.status(400).send('token is expired');
+    }
+});
+
+router.post('/addaddress', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    const { error } = validateAddress(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.addresses.length >= 10) {
+            res.status(400).send('حداکثر تعداد 10 آدرس قابل ثبت است');
+            return;
+        }
+        user.addresses.push(req.body);
+        user.save().then(() => {
+            res.status(200).send('تغییرات با موفقیت انجام شد');
+        });
+    } catch (error) {
+        return res.status(400).send('token is expired');
+    }
+});
+
+router.post('/deleteaddress', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    const addressId = req.query.id;
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+
+        user.addresses.id(addressId).remove();
+        user.save().then(() => {
+            res.status(200).send('حذف  با موفقیت انجام شد');
+        });
     } catch (error) {
         return res.status(400).send('token is expired');
     }

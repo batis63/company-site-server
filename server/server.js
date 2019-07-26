@@ -11,6 +11,7 @@ const Joi = require('joi');
 const products = require('./routes/products');
 const login = require('./routes/login');
 const users = require('./routes/users');
+const states = require('./routes/states');
 const app = express();
 const publicImages = express.static(join(__dirname, './images'));
 
@@ -19,6 +20,7 @@ app.use(helmet());
 app.set('view engine', 'html');
 app.use('/api/products', products);
 app.use('/api/users', users);
+app.use('/api/states', states);
 app.use('/images', publicImages);
 app.use('/api/login', login);
 
