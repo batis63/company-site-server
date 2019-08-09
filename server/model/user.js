@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const { mongoose } = require('./../db/mongoose');
-const config = require('config');
 const email = process.env.EMAIL || 'najafianmorteza@gmail.com';
 const pass = process.env.EMAIL_PASSWORD || 'Niloofar1026911';
 const path = require('path');
@@ -268,7 +267,7 @@ const sendForgotEmail = user => {
 
     const token = jwt.sign(
         { _id: user._id.toHexString() },
-        config.get('JWT_SECRET_FORGOT_PASSWORD')
+       process.env.JWT_SECRET_FORGOT_PASSWORD
     );
 
     var mailOptions = {
@@ -374,7 +373,7 @@ userSchema.statics.findByToken = function(token) {
     let decoded;
 
     try {
-        decoded = jwt.verify(token, config.get('JWT_SECRET'));
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (e) {
         return Promise.reject();
     }
@@ -393,7 +392,7 @@ userSchema.methods.generateAuthToken = function() {
     let user = this;
     const token = jwt.sign(
         { _id: user._id.toHexString() },
-        config.get('JWT_SECRET')
+        process.env.JWT_SECRET
     );
 
     user.token_key = token;

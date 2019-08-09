@@ -6,6 +6,10 @@ const Joi = require('joi');
 const { mongoose } = require('./../db/mongoose');
 
 let productSchema = new mongoose.Schema({
+    product_code: {
+        type: Number,
+        required: true
+    },
     fullname: {
         type: String,
         required: true,
@@ -18,7 +22,11 @@ let productSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    imgurls: [String],
+    imgcounts: {
+        type: Number,
+        required: true,
+        default: 1
+    },
     discount: [
         {
             fromdate: {

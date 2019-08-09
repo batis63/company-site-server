@@ -20,8 +20,12 @@ router.post('/', async (req, res) => {
         return res.status(400).send('Invalid email or password.');
 
     const token = await user.generateAuthToken();
-
-    res.status(200).send(token);
+    let cookie = {
+        sameSite: true
+    };
+    res.status(200)
+        .cookie('seasionId', process.env.sessionID, cookie)
+        .send(token);
 });
 
 router.get('/islogined', async (req, res) => {
@@ -30,13 +34,16 @@ router.get('/islogined', async (req, res) => {
 
     try {
         let user = await User.findByToken(token);
-        res.status(200).send(user);
+        let cookie = {
+            sameSite: true
+        };
+        res.status(200)
+            .cookie('seasionId', process.env.sessionID, cookie)
+            .send(user);
     } catch (error) {
         return res.status(400).send('token is expired');
     }
 });
-
-
 
 const validateLogin = req => {
     const schema = {
