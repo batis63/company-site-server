@@ -267,7 +267,7 @@ const sendForgotEmail = user => {
 
     const token = jwt.sign(
         { _id: user._id.toHexString() },
-       process.env.JWT_SECRET_FORGOT_PASSWORD
+        process.env.JWT_SECRET_FORGOT_PASSWORD
     );
 
     var mailOptions = {
@@ -368,24 +368,19 @@ userSchema.methods.toJSON = function() {
     ]);
 };
 
-userSchema.statics.findByToken = function(token) {
+userSchema.statics.findByToken = async function(token) {
     let User = this;
-    let decoded;
+    let decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (e) {
+        let user = await User.findOne({
+            _id: decoded._id,
+            token_key: token
+        });
+        return user;
+    } catch (error) {
         return Promise.reject();
     }
-
-    let user = User.findOne({
-        _id: decoded._id,
-        token_key: token
-    });
-    if (!user) {
-        return Promise.reject();
-    }
-    return user;
 };
 
 userSchema.methods.generateAuthToken = function() {

@@ -2,6 +2,7 @@
 const dotenv = require('dotenv');
 dotenv.config();
 const crypto = require('crypto');
+var cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { join } = require('path');
 const express = require('express');
@@ -16,6 +17,7 @@ const app = express();
 const publicImages = express.static(join(__dirname, './images'));
 app.use(cookieParser());
 app.use(express.json());
+app.use(cors());
 app.use(helmet());
 app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
 app.use(

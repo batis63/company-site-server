@@ -52,26 +52,14 @@ let productSchema = new mongoose.Schema({
         minlength: 3
     },
     size: {
-        width: {
-            _id: false,
-            type: String,
-            require: false
-        },
-        height: {
-            _id: false,
-            type: String,
-            require: false
-        },
-        depth: {
-            _id: false,
-            type: String,
-            require: false
-        },
-        perforation: {
-            _id: false,
-            type: String,
-            require: false
-        }
+        type: String,
+        required: true,
+        minlength: 2
+    },
+    weight: {
+        type: String,
+        required: true,
+        minlength: 2
     },
     insertdate: {
         type: Date,
