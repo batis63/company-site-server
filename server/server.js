@@ -11,6 +11,7 @@ const products = require('./routes/products');
 const login = require('./routes/login');
 const users = require('./routes/users');
 const votes = require('./routes/votes');
+const newsletter = require('./routes/newsletters');
 const states = require('./routes/states');
 
 const app = express();
@@ -32,6 +33,7 @@ app.set('view engine', 'html');
 app.use('/api/products', products);
 app.use('/api/users', users);
 app.use('/api/votes', votes);
+app.use('/api/newsletter', newsletter);
 app.use('/api/states', states);
 app.use('/images', publicImages);
 app.use('/api/login', login);

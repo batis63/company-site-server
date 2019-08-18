@@ -2,7 +2,6 @@ const Joi = require('joi');
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { User } = require('../model/user');
-const jwt = require('jsonwebtoken');
 const router = express.Router();
 
 router.post('/', async (req, res) => {
