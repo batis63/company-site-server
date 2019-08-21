@@ -17,6 +17,10 @@ let productSchema = new mongoose.Schema({
         trim: true,
         maxlength: 100
     },
+    group: {
+        type: String,
+        required: true
+    },
     price: {
         type: Number,
         required: true,

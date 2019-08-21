@@ -5,8 +5,8 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const { mongoose } = require('./../db/mongoose');
-const email = process.env.EMAIL || 'najafianmorteza@gmail.com';
-const pass = process.env.EMAIL_PASSWORD || 'Niloofar1026911';
+const email = process.env.EMAIL ;
+const pass = process.env.EMAIL_PASSWORD ;
 const path = require('path');
 
 let userSchema = new mongoose.Schema({
@@ -183,9 +183,9 @@ const validatePasswordWhenReset = user => {
 
 const sendMail = (type, user) => {
     var transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
+        host: 'mail.mizbanplast.ir',
+        port: 465,
+        secure: true, // true for 465, false for other ports
         auth: {
             user: email,
             pass
@@ -215,7 +215,7 @@ const sendMail = (type, user) => {
             break;
     }
     var mailOptions = {
-        from: 'najafianmorteza@gmail.com',
+        from: 'support@mizbanplast.ir',
         to: user.email,
         subject: 'به سایت ما خوش آمدید',
         html: html
