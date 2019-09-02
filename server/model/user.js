@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const { mongoose } = require('./../db/mongoose');
 const email = process.env.EMAIL ;
-const pass = process.env.EMAIL_PASSWORD ;
+const pass = process.env.EMAIL_PASSWORD;
 const path = require('path');
 
 let userSchema = new mongoose.Schema({
@@ -188,13 +188,15 @@ const sendMail = (type, user) => {
         secure: true, // true for 465, false for other ports
         auth: {
             user: email,
-            pass
+            pass,
         },
         tls: {
             // do not fail on invalid certs
             rejectUnauthorized: false
         }
     });
+
+   
 
     let html = '';
 
@@ -229,7 +231,7 @@ const sendMail = (type, user) => {
     };
     transporter.sendMail(mailOptions, function(error, info) {
         if (error) {
-            console.log(error);
+            console.log(email + pass);
         } else {
             console.log('Email sent: ' + info.response + mailOptions.to);
         }
@@ -238,9 +240,9 @@ const sendMail = (type, user) => {
 
 const sendForgotEmail = user => {
     var transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
+        host: 'mail.mizbanplast.ir',
+        port: 465,
+        secure: true, // true for 465, false for other ports
         auth: {
             user: email,
             pass
@@ -276,7 +278,7 @@ const sendForgotEmail = user => {
         template: 'forgot-password-email',
         subject: 'بازیابی رمز عبور',
         context: {
-            url: 'http://localhost:3000/resetpassword?token=' + token,
+            url: 'https://mizbanplast.ir/resetpassword?token=' + token,
             name: user.first_name
         }
     };
@@ -364,7 +366,8 @@ userSchema.methods.toJSON = function() {
         'email',
         'tel',
         'mobile',
-        'addresses'
+        'addresses',
+        'user_type'
     ]);
 };
 

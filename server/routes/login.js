@@ -39,6 +39,24 @@ router.get('/islogined', async (req, res) => {
     }
 });
 
+router.get('/isAdminlogined', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) {
+            return res.status(400).send('token is expire');
+        }
+        if (user.user_type !== 'admin') {
+            return res.status(400).send('user not admin');
+        }
+        res.status(200).send(user);
+    } catch (error) {
+        return res.status(400).send('token is expired');
+    }
+});
+
 const validateLogin = req => {
     const schema = {
         email: Joi.string()
