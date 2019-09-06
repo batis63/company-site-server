@@ -1,4 +1,5 @@
 const express = require('express');
+const requestIp = require('request-ip');
 const router = express.Router();
 
 const { Blog, validate, validateSections } = require('../model/blog');
@@ -9,23 +10,29 @@ router.post('/addblog', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
 
-    const { error } = validate(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-
     try {
         let user = await User.findByToken(token);
         if (!user) return res.status(400).send('token not exist');
         if (user.user_type !== 'admin') {
             return res.status(401).send('Unauthorized');
         }
-        let blog = new Blog({
+        const ip = requestIp.getClientIp(req);
+        const model = {
             title: req.body.title,
-            userName: req.body.userName,
-            userIp: req.body.userIp
-        });
-        blog.save().then(() => {
-            res.status(200).send('تغییرات با موفقیت انجام شد');
-        });
+            userName: user.first_name + ' ' + user.last_name,
+            userIp: ip
+        };
+        const { error } = validate(model);
+        if (error) return res.status(400).send(error.details[0].message);
+        let blog = new Blog(model);
+        blog.save()
+            .then(() => {
+                res.status(200).send('تغییرات با موفقیت انجام شد');
+            })
+            .catch(error => {
+                console.log(error);
+                res.status(400).send('خطا در ذخیره اطلاعات');
+            });
     } catch (error) {
         return res.status(400).send('data not valid');
     }
@@ -37,9 +44,6 @@ router.post('/editblog', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
 
-    const { error } = validate(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-
     try {
         let user = await User.findByToken(token);
         if (!user) return res.status(400).send('token not exist');
@@ -47,11 +51,15 @@ router.post('/editblog', async (req, res) => {
             return res.status(401).send('User Unauthorized');
         }
 
-        let blog = Blog.findByIdAndUpdate(req.query.id, {
+        const ip = requestIp.getClientIp(req);
+        const model = {
             title: req.body.title,
-            userName: req.body.userName,
-            userIp: req.body.userIp
-        })
+            userName: user.first_name + ' ' + user.last_name,
+            userIp: ip
+        };
+        const { error } = validate(model);
+        if (error) return res.status(400).send(error.details[0].message);
+        await Blog.findByIdAndUpdate(req.query.id, model)
             .then(() => {
                 res.status(200).send('ویرایش با موفقیت انجام شد');
             })
@@ -69,9 +77,6 @@ router.post('/removeblog', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
 
-    const { error } = validate(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-
     try {
         let user = await User.findByToken(token);
         if (!user) return res.status(400).send('token not exist');
@@ -79,7 +84,7 @@ router.post('/removeblog', async (req, res) => {
             return res.status(401).send('User Unauthorized');
         }
 
-        let blog = Blog.findByIdAndRemove(req.query.id)
+        await Blog.findByIdAndRemove(req.query.id)
             .then(() => {
                 res.status(200).send('حذف با موفقیت انجام شد');
             })
@@ -90,7 +95,29 @@ router.post('/removeblog', async (req, res) => {
         return res.status(400).send('data not valid');
     }
 });
-//#endregion removeBlog
+//#endregion getOneBlog
+
+//#region removeBlog
+router.get('/getoneblog', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('User Unauthorized');
+        }
+
+        let blog = await Blog.findById(req.query.id);
+        if (!blog) return res.status(400).send('اطلاعات یافت نشد');
+
+        res.status(200).send(blog);
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion getOneBlog
 
 //#region addBlogSection
 router.post('/addblogsection', async (req, res) => {
@@ -106,13 +133,13 @@ router.post('/addblogsection', async (req, res) => {
         if (user.user_type !== 'admin') {
             return res.status(401).send('Unauthorized');
         }
-        let blog = Blog.findById(req.query.id);
+        let blog = await Blog.findById(req.query.id);
         blog.sections.push(req.body);
         blog.save()
             .then(() => {
                 res.status(200).send('تغییرات با موفقیت انجام شد');
             })
-            .catch(() => {
+            .catch(error => {
                 return res.status(400).send('خطا در ویرایش اطلاعات');
             });
     } catch (error) {
@@ -121,7 +148,7 @@ router.post('/addblogsection', async (req, res) => {
 });
 //#endregion addBlogSection
 
-//#region editBlodSection  
+//#region editBlodSection
 router.post('/editblogsection', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
@@ -135,7 +162,7 @@ router.post('/editblogsection', async (req, res) => {
         if (user.user_type !== 'admin') {
             return res.status(401).send('Unauthorized');
         }
-        Blog.update(
+        await Blog.update(
             { _id: req.query.id, 'sections._id': req.query.sectionid },
             {
                 $set: {
@@ -171,7 +198,7 @@ router.post('/deleteblogsection', async (req, res) => {
         if (user.user_type !== 'admin') {
             return res.status(401).send('Unauthorized');
         }
-        let blog = Blog.findById(req.query.id);
+        let blog = await Blog.findById(req.query.id);
         blog.sections.id(req.query.sectionid).remove();
         blog.save()
             .then(() => {
@@ -186,4 +213,24 @@ router.post('/deleteblogsection', async (req, res) => {
 });
 //#endregion deleteBlogSection
 
+//#region getBlogs
+router.get('/getblogs', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('User Unauthorized');
+        }
+
+        let blogs = await Blog.find();
+        res.status(200).send(blogs);
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+
+//#endregion getBlogs
 module.exports = router;

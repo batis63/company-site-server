@@ -6,11 +6,11 @@ let blogSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 2,
-        maxlength: 50,
+        maxlength: 70,
         trim: true
     },
     userName: {
-        type: Date,
+        type: String,
         required: true,
         minlength: 2,
         maxlength: 50,
@@ -28,6 +28,24 @@ let blogSchema = new mongoose.Schema({
         default: new Date(),
         required: true
     },
+    links: [
+        {
+            title: {
+                type: String,
+                required: true,
+                trim: true,
+                minlength: 2,
+                maxlength: 50
+            },
+            url: {
+                type: String,
+                required: true,
+                minlength: 5,
+                maxlength: 50
+            }
+        }
+    ],
+    tags: [String],
     sections: [
         {
             content: {
@@ -56,16 +74,13 @@ const validate = blog => {
     const schema = {
         title: Joi.string()
             .min(2)
-            .max(50)
+            .max(70)
             .required(),
         userName: Joi.string()
             .min(2)
             .max(50)
             .required(),
-        userIp: Joi.min(2)
-            .max(50)
-            .required()
-            .ip()
+        userIp: Joi.string().required()
     };
 
     return Joi.validate(blog, schema);
@@ -73,15 +88,22 @@ const validate = blog => {
 
 let validateSections = section => {
     let schema = {
-        section: Joi.object().keys({
-            content: Joi.string()
-                .min(10)
-                .required(),
-            imageUrl: Joi.min(5)
-                .max(50)
-                .uri(),
-            order: Joi.number().required()
-        })
+        content: Joi.string()
+            .min(10)
+            .required(),
+        imageUrl: Joi.string().uri(),
+        order: Joi.number().required()
+    };
+    return Joi.validate(section, schema);
+};
+
+let validateLinks = section => {
+    let schema = {
+        title: Joi.string()
+            .min(2)
+            .max(50)
+            .required(),
+        url: Joi.string().uri()
     };
     return Joi.validate(section, schema);
 };
