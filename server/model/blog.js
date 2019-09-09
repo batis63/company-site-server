@@ -45,7 +45,18 @@ let blogSchema = new mongoose.Schema({
             }
         }
     ],
-    tags: [String],
+    tags: {
+        type: String,
+        required: false,
+        trim: true,
+        minlength: 2,
+        maxlength: 100
+    },
+    downloadLink: {
+        type: String,
+        required: false,
+        trim: true
+    },
     sections: [
         {
             content: {
@@ -56,8 +67,8 @@ let blogSchema = new mongoose.Schema({
             imageUrl: {
                 type: String,
                 required: false,
-                minlength: 5,
-                maxlength: 50
+
+                maxlength: 200
             },
             order: {
                 type: Number,
@@ -80,7 +91,11 @@ const validate = blog => {
             .min(2)
             .max(50)
             .required(),
-        userIp: Joi.string().required()
+        userIp: Joi.string().required(),
+        tags: Joi.string()
+            .min(2)
+            .max(50),
+        downloadLink: Joi.string().uri()
     };
 
     return Joi.validate(blog, schema);
@@ -91,25 +106,28 @@ let validateSections = section => {
         content: Joi.string()
             .min(10)
             .required(),
-        imageUrl: Joi.string().uri(),
+        imageUrl: Joi.string()
+            .uri()
+            .allow(''),
         order: Joi.number().required()
     };
     return Joi.validate(section, schema);
 };
 
-let validateLinks = section => {
+let validateLinks = link => {
     let schema = {
         title: Joi.string()
             .min(2)
-            .max(50)
+            .max(70)
             .required(),
         url: Joi.string().uri()
     };
-    return Joi.validate(section, schema);
+    return Joi.validate(link, schema);
 };
 
 module.exports = {
     Blog,
     validate,
-    validateSections
+    validateSections,
+    validateLinks
 };

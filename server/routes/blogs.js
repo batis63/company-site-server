@@ -2,7 +2,12 @@ const express = require('express');
 const requestIp = require('request-ip');
 const router = express.Router();
 
-const { Blog, validate, validateSections } = require('../model/blog');
+const {
+    Blog,
+    validate,
+    validateSections,
+    validateLinks
+} = require('../model/blog');
 const { User } = require('../model/user');
 
 //#region addBlog
@@ -55,7 +60,9 @@ router.post('/editblog', async (req, res) => {
         const model = {
             title: req.body.title,
             userName: user.first_name + ' ' + user.last_name,
-            userIp: ip
+            userIp: ip,
+            tags: req.body.tags,
+            downloadLink: req.body.downloadLink
         };
         const { error } = validate(model);
         if (error) return res.status(400).send(error.details[0].message);
@@ -95,9 +102,9 @@ router.post('/removeblog', async (req, res) => {
         return res.status(400).send('data not valid');
     }
 });
-//#endregion getOneBlog
+//#endregion removeBlog
 
-//#region removeBlog
+//#region getoneblog
 router.get('/getoneblog', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
@@ -118,6 +125,56 @@ router.get('/getoneblog', async (req, res) => {
     }
 });
 //#endregion getOneBlog
+
+//#region getoneSectionblog
+router.get('/getonesectionblog', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('User Unauthorized');
+        }
+
+        let blog = await Blog.findOne({
+            _id: req.query.id,
+            'sections._id': req.query.sectionid
+        });
+        if (!blog) return res.status(400).send('اطلاعات یافت نشد');
+
+        res.status(200).send(blog.sections.id(req.query.sectionid));
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion getoneSectionblog
+
+//#region getoneLinkBlog
+router.get('/getonelinkblog', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('User Unauthorized');
+        }
+
+        let blog = await Blog.findOne({
+            _id: req.query.id,
+            'links._id': req.query.linkid
+        });
+        if (!blog) return res.status(400).send('اطلاعات یافت نشد');
+
+        res.status(200).send(blog.links.id(req.query.linkid));
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion getoneLinkBlog
 
 //#region addBlogSection
 router.post('/addblogsection', async (req, res) => {
@@ -140,6 +197,7 @@ router.post('/addblogsection', async (req, res) => {
                 res.status(200).send('تغییرات با موفقیت انجام شد');
             })
             .catch(error => {
+                console.log(error);
                 return res.status(400).send('خطا در ویرایش اطلاعات');
             });
     } catch (error) {
@@ -148,7 +206,36 @@ router.post('/addblogsection', async (req, res) => {
 });
 //#endregion addBlogSection
 
-//#region editBlodSection
+//#region addbloglink
+router.post('/addbloglink', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    const { error } = validateLinks(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('Unauthorized');
+        }
+        let blog = await Blog.findById(req.query.id);
+        blog.links.push(req.body);
+        blog.save()
+            .then(() => {
+                res.status(200).send('تغییرات با موفقیت انجام شد');
+            })
+            .catch(error => {
+                return res.status(400).send('خطا در ویرایش اطلاعات');
+            });
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion addbloglink
+
+//#region editBlogSection
 router.post('/editblogsection', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
@@ -182,15 +269,47 @@ router.post('/editblogsection', async (req, res) => {
         return res.status(400).send('data not valid');
     }
 });
-//#endregion editBlodSection
+//#endregion editBlogSection
 
-//#region deleteBlogSection
-router.post('/deleteblogsection', async (req, res) => {
+//#region editbloglink
+router.post('/editbloglink', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
 
-    const { error } = validateSections(req.body);
+    const { error } = validateLinks(req.body);
     if (error) return res.status(400).send(error.details[0].message);
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('Unauthorized');
+        }
+        await Blog.update(
+            { _id: req.query.id, 'links._id': req.query.linkid },
+            {
+                $set: {
+                    'links.$.title': req.body.title,
+                    'links.$.url': req.body.url
+                }
+            }
+        )
+            .then(() => {
+                res.status(200).send('تغییرات با موفقیت انجام شد');
+            })
+            .catch(() => {
+                return res.status(400).send('خطا در ویرایش اطلاعات');
+            });
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion editbloglink
+
+//#region removesectionblog
+router.post('/removesectionblog', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
 
     try {
         let user = await User.findByToken(token);
@@ -211,7 +330,33 @@ router.post('/deleteblogsection', async (req, res) => {
         return res.status(400).send('data not valid');
     }
 });
-//#endregion deleteBlogSection
+//#endregion removesectionblog
+
+//#region removelinkblog
+router.post('/removelinkblog', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('Unauthorized');
+        }
+        let blog = await Blog.findById(req.query.id);
+        blog.links.id(req.query.linkid).remove();
+        blog.save()
+            .then(() => {
+                res.status(200).send('لینک مطلب با موفقیت حذف شد');
+            })
+            .catch(() => {
+                res.status(400).send('خطا در حذف بخش');
+            });
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion removelinkblog
 
 //#region getBlogs
 router.get('/getblogs', async (req, res) => {
@@ -233,4 +378,5 @@ router.get('/getblogs', async (req, res) => {
 });
 
 //#endregion getBlogs
+
 module.exports = router;
