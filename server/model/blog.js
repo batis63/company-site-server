@@ -57,6 +57,49 @@ let blogSchema = new mongoose.Schema({
         required: false,
         trim: true
     },
+    isPublished: { type: Boolean, required: true, default: false },
+    shortLink: { type: String, required: false, maxlength: 50 },
+    comments: [
+        {
+            insertDateComment: {
+                type: Date,
+                default: new Date()
+            },
+            comment: {
+                type: String,
+                required: true,
+                minlength: 2,
+                maxlength: 500
+            },
+            email: {
+                type: String,
+                required: true
+            },
+            isPublished: {
+                type: Boolean,
+                required: true,
+                default: false
+            },
+            reply: {
+                type: String,
+                required: false,
+                maxlength: 255
+            },
+            replyDate: {
+                type: Date,
+                required: false,
+                default: null
+            },
+            name: {
+                type: String,
+                require: true,
+                trim: true,
+                minlength:2,
+                maxlength: 100
+            }
+        }
+    ],
+
     sections: [
         {
             content: {
@@ -95,7 +138,13 @@ const validate = blog => {
         tags: Joi.string()
             .min(2)
             .max(50),
-        downloadLink: Joi.string().uri()
+        downloadLink: Joi.string()
+            .uri()
+            .allow(''),
+        shortLink: Joi.string()
+            .uri()
+            .allow(''),
+        isPublished: Joi.bool()
     };
 
     return Joi.validate(blog, schema);
@@ -114,6 +163,25 @@ let validateSections = section => {
     return Joi.validate(section, schema);
 };
 
+let validateComments = comment => {
+    let schema = {
+        comment: Joi.string()
+            .min(2)
+            .max(500)
+            .required(),
+        email: Joi.string()
+            .email()
+            .required(),
+        isPublished: Joi.bool().required(),
+        reply: Joi.string()
+            .max(255)
+            .allow(''),
+        replyDate: Joi.date().allow(''),
+        name: Joi.string().required().min(2).max(100)
+    };
+    return Joi.validate(comment, schema);
+};
+
 let validateLinks = link => {
     let schema = {
         title: Joi.string()
@@ -129,5 +197,6 @@ module.exports = {
     Blog,
     validate,
     validateSections,
-    validateLinks
+    validateLinks,
+    validateComments
 };

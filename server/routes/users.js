@@ -200,7 +200,7 @@ router.post('/editaddress', async (req, res) => {
         let user = await User.findByToken(token);
         if (!user) return res.status(400).send('token not exist');
 
-        User.update(
+        User.updateOne(
             { _id: user._id, 'addresses._id': addressId },
             {
                 $set: {

@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const { mongoose } = require('./../db/mongoose');
-const email = process.env.EMAIL ;
+const email = process.env.EMAIL;
 const pass = process.env.EMAIL_PASSWORD;
 const path = require('path');
 
@@ -13,12 +13,16 @@ let userSchema = new mongoose.Schema({
     first_name: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        minlength: 2,
+        maxlength: 70
     },
     last_name: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        minlength: 2,
+        maxlength: 70
     },
     password: {
         type: String,
@@ -59,12 +63,16 @@ let userSchema = new mongoose.Schema({
             province_name: {
                 type: String,
                 trim: true,
-                required: false
+                required: false,
+                minlength: 2,
+                maxlength: 100
             },
             city_name: {
                 type: String,
                 trim: true,
-                required: false
+                required: false,
+                minlength: 2,
+                maxlength: 100
             },
             address: {
                 type: String,
@@ -76,29 +84,36 @@ let userSchema = new mongoose.Schema({
             postal_code: {
                 type: String,
                 required: false,
-                trim: true
+                trim: true,
+                maxlength: 10
             },
             receiver_mobile: {
                 type: String,
                 required: true,
-                trim: true
+                trim: true,
+                maxlength: 11,
+                minlength: 11
             },
             receiver_first_name: {
                 type: String,
                 required: true,
-                trim: true
+                trim: true,
+                minlength: 2,
+                maxlength: 70
             },
             receiver_last_name: {
                 type: String,
                 required: true,
-                trim: true
+                trim: true,
+                minlength: 2,
+                maxlength: 70
             }
         }
     ],
     tel: {
         type: String,
         trim: true,
-        minlength: 11,
+
         maxlength: 11,
         required: false
     },
@@ -116,18 +131,18 @@ const validateAddress = model => {
         province_name: Joi.string()
             .required()
             .min(2)
-            .max(255),
+            .max(100),
         city_name: Joi.string()
             .required()
             .min(2)
-            .max(255),
+            .max(100),
         address: Joi.string()
             .required()
             .min(2)
             .max(255),
         postal_code: Joi.string()
-            .min(10)
-            .max(10),
+            .max(10)
+            .allow(''),
         receiver_mobile: Joi.string()
             .required()
             .min(11)
@@ -135,11 +150,11 @@ const validateAddress = model => {
         receiver_first_name: Joi.string()
             .required()
             .min(2)
-            .max(255),
+            .max(70),
         receiver_last_name: Joi.string()
             .required()
             .min(2)
-            .max(255)
+            .max(70)
     };
     return Joi.validate(model, schema);
 };
@@ -188,15 +203,13 @@ const sendMail = (type, user) => {
         secure: true, // true for 465, false for other ports
         auth: {
             user: email,
-            pass,
+            pass
         },
         tls: {
             // do not fail on invalid certs
             rejectUnauthorized: false
         }
     });
-
-   
 
     let html = '';
 
@@ -298,12 +311,12 @@ const sendForgotEmail = user => {
 const validate = user => {
     const schema = {
         last_name: Joi.string()
-            .min(5)
-            .max(255)
+            .min(2)
+            .max(70)
             .required(),
         first_name: Joi.string()
-            .min(5)
-            .max(255)
+            .min(2)
+            .max(70)
             .required(),
         password: Joi.string()
             .min(5)
@@ -315,8 +328,8 @@ const validate = user => {
             .email()
             .required(),
         tel: Joi.string()
-            .min(11)
-            .max(11),
+            .max(11)
+            .allow(''),
         mobile: Joi.string()
             .min(11)
             .max(11)
@@ -329,12 +342,12 @@ const validate = user => {
 const validateWhenEdit = user => {
     const schema = {
         last_name: Joi.string()
-            .min(5)
-            .max(255)
+            .min(2)
+            .max(70)
             .required(),
         first_name: Joi.string()
-            .min(5)
-            .max(255)
+            .min(2)
+            .max(70)
             .required(),
 
         email: Joi.string()
@@ -343,8 +356,8 @@ const validateWhenEdit = user => {
             .email()
             .required(),
         tel: Joi.string()
-            .min(11)
-            .max(11),
+            .max(11)
+            .allow(''),
         mobile: Joi.string()
             .min(11)
             .max(11)

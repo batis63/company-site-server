@@ -6,7 +6,8 @@ const {
     Blog,
     validate,
     validateSections,
-    validateLinks
+    validateLinks,
+    validateComments
 } = require('../model/blog');
 const { User } = require('../model/user');
 
@@ -62,7 +63,9 @@ router.post('/editblog', async (req, res) => {
             userName: user.first_name + ' ' + user.last_name,
             userIp: ip,
             tags: req.body.tags,
-            downloadLink: req.body.downloadLink
+            downloadLink: req.body.downloadLink,
+            shortLink: req.body.shortLink,
+            isPublished: req.body.isPublished
         };
         const { error } = validate(model);
         if (error) return res.status(400).send(error.details[0].message);
@@ -176,6 +179,31 @@ router.get('/getonelinkblog', async (req, res) => {
 });
 //#endregion getoneLinkBlog
 
+//#region getoneCommentBlog
+router.get('/getonecommentblog', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('User Unauthorized');
+        }
+
+        let blog = await Blog.findOne({
+            _id: req.query.id,
+            'comments._id': req.query.commentid
+        });
+        if (!blog) return res.status(400).send('اطلاعات یافت نشد');
+
+        res.status(200).send(blog.comments.id(req.query.commentid));
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion getoneCommentBlog
+
 //#region addBlogSection
 router.post('/addblogsection', async (req, res) => {
     let token = req.header('x-auth');
@@ -235,6 +263,27 @@ router.post('/addbloglink', async (req, res) => {
 });
 //#endregion addbloglink
 
+//#region addblogcomment
+router.post('/addblogcomment', async (req, res) => {
+    const { error } = validateComments(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    try {
+        let blog = await Blog.findById(req.query.id);
+        blog.comments.push(req.body);
+        blog.save()
+            .then(() => {
+                res.status(200).send('ثبت کامنت با موفقیت انجام شد');
+            })
+            .catch(error => {
+                return res.status(400).send(error);
+            });
+    } catch (error) {
+        return res.status(400).send(error);
+    }
+});
+//#endregion addblogcomment
+
 //#region editBlogSection
 router.post('/editblogsection', async (req, res) => {
     let token = req.header('x-auth');
@@ -249,7 +298,7 @@ router.post('/editblogsection', async (req, res) => {
         if (user.user_type !== 'admin') {
             return res.status(401).send('Unauthorized');
         }
-        await Blog.update(
+        await Blog.updateOne(
             { _id: req.query.id, 'sections._id': req.query.sectionid },
             {
                 $set: {
@@ -271,6 +320,44 @@ router.post('/editblogsection', async (req, res) => {
 });
 //#endregion editBlogSection
 
+//#region editBlogComment
+router.post('/editblogcomment', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    const { error } = validateComments(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('Unauthorized');
+        }
+        await Blog.updateOne(
+            { _id: req.query.id, 'comments._id': req.query.commentid },
+            {
+                $set: {
+                    'comments.$.comment': req.body.comment,
+                    'comments.$.email': req.body.email,
+                    'comments.$.isPublished': req.body.isPublished,
+                    'comments.$.reply': req.body.reply,
+                    'comments.$.replyDate': req.body.replyDate
+                }
+            }
+        )
+            .then(() => {
+                res.status(200).send('تغییرات با موفقیت انجام شد');
+            })
+            .catch((error) => {
+                return res.status(400).send(error);
+            });
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion editBlogComment
+
 //#region editbloglink
 router.post('/editbloglink', async (req, res) => {
     let token = req.header('x-auth');
@@ -285,7 +372,7 @@ router.post('/editbloglink', async (req, res) => {
         if (user.user_type !== 'admin') {
             return res.status(401).send('Unauthorized');
         }
-        await Blog.update(
+        await Blog.updateOne(
             { _id: req.query.id, 'links._id': req.query.linkid },
             {
                 $set: {
@@ -331,6 +418,32 @@ router.post('/removesectionblog', async (req, res) => {
     }
 });
 //#endregion removesectionblog
+
+//#region removecommentblog
+router.post('/removecommentblog', async (req, res) => {
+    let token = req.header('x-auth');
+    if (!token) return res.status(400).send('token not exist');
+
+    try {
+        let user = await User.findByToken(token);
+        if (!user) return res.status(400).send('token not exist');
+        if (user.user_type !== 'admin') {
+            return res.status(401).send('Unauthorized');
+        }
+        let blog = await Blog.findById(req.query.id);
+        blog.comments.id(req.query.commentid).remove();
+        blog.save()
+            .then(() => {
+                res.status(200).send('کامنت با موفقیت حذف شد');
+            })
+            .catch(error => {
+                res.status(400).send(error);
+            });
+    } catch (error) {
+        return res.status(400).send(error);
+    }
+});
+//#endregion removecommentblog
 
 //#region removelinkblog
 router.post('/removelinkblog', async (req, res) => {
