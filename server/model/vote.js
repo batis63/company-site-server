@@ -35,7 +35,8 @@ const validate = vote => {
         title: Joi.string()
             .min(3)
             .max(250)
-            .required()
+            .required(),
+        insertDateVote: Joi.date()
     };
 
     return Joi.validate(vote, schema);

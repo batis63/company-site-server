@@ -1,6 +1,7 @@
 const express = require('express');
 const requestIp = require('request-ip');
 const router = express.Router();
+const _ = require('lodash');
 
 const {
     Blog,
@@ -26,7 +27,8 @@ router.post('/addblog', async (req, res) => {
         const model = {
             title: req.body.title,
             userName: user.first_name + ' ' + user.last_name,
-            userIp: ip
+            userIp: ip,
+            insertDateBlog: req.body.insertDateBlog
         };
         const { error } = validate(model);
         if (error) return res.status(400).send(error.details[0].message);
@@ -265,11 +267,13 @@ router.post('/addbloglink', async (req, res) => {
 
 //#region addblogcomment
 router.post('/addblogcomment', async (req, res) => {
+    req.body.insertDateComment = new Date();
     const { error } = validateComments(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
     try {
         let blog = await Blog.findById(req.query.id);
+
         blog.comments.push(req.body);
         blog.save()
             .then(() => {
@@ -304,7 +308,8 @@ router.post('/editblogsection', async (req, res) => {
                 $set: {
                     'sections.$.content': req.body.content,
                     'sections.$.imageUrl': req.body.imageUrl,
-                    'sections.$.order': req.body.order
+                    'sections.$.order': req.body.order,
+                    'sections.$.sectionType': req.body.sectionType
                 }
             }
         )
@@ -324,7 +329,7 @@ router.post('/editblogsection', async (req, res) => {
 router.post('/editblogcomment', async (req, res) => {
     let token = req.header('x-auth');
     if (!token) return res.status(400).send('token not exist');
-
+    req.body.replyDate = new Date();
     const { error } = validateComments(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
@@ -342,14 +347,15 @@ router.post('/editblogcomment', async (req, res) => {
                     'comments.$.email': req.body.email,
                     'comments.$.isPublished': req.body.isPublished,
                     'comments.$.reply': req.body.reply,
-                    'comments.$.replyDate': req.body.replyDate
+                    'comments.$.replyDate': req.body.replyDate,
+                    'comments.$.insertDateComment': req.body.insertDateComment
                 }
             }
         )
             .then(() => {
                 res.status(200).send('تغییرات با موفقیت انجام شد');
             })
-            .catch((error) => {
+            .catch(error => {
                 return res.status(400).send(error);
             });
     } catch (error) {
@@ -485,6 +491,28 @@ router.get('/getblogs', async (req, res) => {
 
         let blogs = await Blog.find();
         res.status(200).send(blogs);
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+
+//#endregion getBlogs
+
+//#region getBlogs
+router.get('/getclblogs', async (req, res) => {
+    try {
+        let blogs = await Blog.find();
+
+        const result = _.map(
+            blogs.filter(a => a.isPublished),
+            _.partialRight(_.pick, [
+                '_id',
+                'insertDateBlog',
+                'title',
+                'sections'
+            ])
+        );
+        res.status(200).send(result);
     } catch (error) {
         return res.status(400).send('data not valid');
     }

@@ -83,18 +83,19 @@ let blogSchema = new mongoose.Schema({
             reply: {
                 type: String,
                 required: false,
-                maxlength: 255
+                maxlength: 255,
+                default: ''
             },
             replyDate: {
                 type: Date,
                 required: false,
-                default: null
+                default: new Date()
             },
             name: {
                 type: String,
                 require: true,
                 trim: true,
-                minlength:2,
+                minlength: 2,
                 maxlength: 100
             }
         }
@@ -117,6 +118,11 @@ let blogSchema = new mongoose.Schema({
                 type: Number,
                 required: true,
                 default: 1
+            },
+            sectionType: {
+                type: String,
+                required: false,
+                maxlength: 1000
             }
         }
     ]
@@ -144,7 +150,8 @@ const validate = blog => {
         shortLink: Joi.string()
             .uri()
             .allow(''),
-        isPublished: Joi.bool()
+        isPublished: Joi.bool(),
+        insertDateBlog: Joi.date()
     };
 
     return Joi.validate(blog, schema);
@@ -158,7 +165,8 @@ let validateSections = section => {
         imageUrl: Joi.string()
             .uri()
             .allow(''),
-        order: Joi.number().required()
+        order: Joi.number().required(),
+        sectionType: Joi.string().allow('')
     };
     return Joi.validate(section, schema);
 };
@@ -177,7 +185,11 @@ let validateComments = comment => {
             .max(255)
             .allow(''),
         replyDate: Joi.date().allow(''),
-        name: Joi.string().required().min(2).max(100)
+        name: Joi.string()
+            .required()
+            .min(2)
+            .max(100),
+        insertDateComment: Joi.date()
     };
     return Joi.validate(comment, schema);
 };
