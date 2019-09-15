@@ -50,7 +50,7 @@ router.post('/upload', async (req, res) => {
         }
         const directory = req.query.directory;
         const path = join(
-            appRoot + '/server',
+            process.env.ROOT_PATH,
             `./images${directory === undefined ? '' : directory}`
         );
         let storage = multer.diskStorage({
@@ -91,7 +91,7 @@ router.post('/createdirectory', async (req, res) => {
         const directory = req.query.directory;
         const foldername = req.query.foldername;
         const path = join(
-            appRoot + '/server',
+            process.env.ROOT_PATH,
             `./images${directory === undefined ? '' : directory}`
         );
 
@@ -127,7 +127,7 @@ router.post('/removedirectory', async (req, res) => {
         const directory = req.query.directory;
         const foldername = req.query.foldername;
         const path = join(
-            appRoot + '/server',
+            process.env.ROOT_PATH,
             `./images${directory === undefined ? '' : directory}`
         );
 
@@ -163,7 +163,7 @@ router.post('/removefile', async (req, res) => {
         const directory = req.query.directory;
         const filename = req.query.filename;
         const path = join(
-            appRoot + '/server',
+            process.env.ROOT_PATH,
             `./images${directory === undefined ? '' : directory}`
         );
 
@@ -199,7 +199,7 @@ router.post('/extractfile', async (req, res) => {
         const directory = req.query.directory;
         const filename = req.query.filename;
         const path = join(
-            appRoot + '/server',
+            process.env.ROOT_PATH,
             `./images${directory === undefined ? '' : directory}`
         );
 
