@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const hbs = require('nodemailer-express-handlebars');
 const { mongoose } = require('./../db/mongoose');
-const email = process.env.EMAIL;
+const emailMain = process.env.EMAIL;
 const pass = process.env.EMAIL_PASSWORD;
 const path = require('path');
 
@@ -159,7 +159,7 @@ const validateAddress = model => {
     return Joi.validate(model, schema);
 };
 
-const validateEmail = user => {
+const validateEmail = model => {
     const schema = {
         email: Joi.string()
             .required()
@@ -167,7 +167,7 @@ const validateEmail = user => {
             .max(255)
             .email()
     };
-    return Joi.validate(email, schema);
+    return Joi.validate(model, schema);
 };
 
 const validatePassword = user => {
@@ -196,68 +196,13 @@ const validatePasswordWhenReset = user => {
     return Joi.validate(user, schema);
 };
 
-const sendMail = (type, user) => {
-    var transporter = nodemailer.createTransport({
-        host: 'mail.mizbanplast.ir',
-        port: 465,
-        secure: true, // true for 465, false for other ports
-        auth: {
-            user: email,
-            pass
-        },
-        tls: {
-            // do not fail on invalid certs
-            rejectUnauthorized: false
-        }
-    });
-
-    let html = '';
-
-    switch (type) {
-        case 'signup':
-            html = `<h1>کاربر گرامی  ثبت نام شما با موفقیت انجام شد</h1>`;
-            break;
-
-        case 'changepassword':
-            html = `<h1>کاربر گرامی تغییر رمز شما با موفقیت انجام شد</h1>`;
-            break;
-
-        case 'editInformation':
-            html = `<h1>کاربر گرامی اطلاعات کاربری شما با موفقیت ویرایش شد</h1>`;
-            break;
-
-        default:
-            break;
-    }
-    var mailOptions = {
-        from: 'support@mizbanplast.ir',
-        to: user.email,
-        subject: 'به سایت ما خوش آمدید',
-        html: html
-        // attachments: [
-        //     {
-        //         // filename and content type is derived from path
-        //         filename: 'img1.jpg',
-        //         path: 'http://localhost:4000/images/img1.jpg'
-        //     }
-        // ]
-    };
-    transporter.sendMail(mailOptions, function(error, info) {
-        if (error) {
-            console.log(email + pass);
-        } else {
-            console.log('Email sent: ' + info.response + mailOptions.to);
-        }
-    });
-};
-
 const sendForgotEmail = user => {
     var transporter = nodemailer.createTransport({
         host: 'mail.mizbanplast.ir',
         port: 465,
         secure: true, // true for 465, false for other ports
         auth: {
-            user: email,
+            user: emailMain,
             pass
         },
         tls: {
@@ -286,13 +231,14 @@ const sendForgotEmail = user => {
     );
 
     var mailOptions = {
-        from: email,
+        from: emailMain,
         to: user.email,
         template: 'forgot-password-email',
         subject: 'بازیابی رمز عبور',
         context: {
-            url: 'https://mizbanplast.ir/resetpassword?token=' + token,
-            name: user.first_name
+            url: `${process.env.PUBLIC_URL}/resetpassword?token=` + token,
+            name: user.first_name,
+            publicurl: 'https://api.mizbanplast.ir/images/logo.png'
         }
     };
     transporter.sendMail(mailOptions, function(error, info) {
@@ -303,7 +249,159 @@ const sendForgotEmail = user => {
             user.reset_password_token = token;
             user.reset_password_expires = date.setDate(date.getDate() + 7);
             user.save();
-            console.log('Email sent: ' + info.response);
+            console.log(
+                'Email sent: ' + info.response + user.email + mailOptions.to
+            );
+        }
+    });
+};
+
+const sendChangePasswordEmail = user => {
+    var transporter = nodemailer.createTransport({
+        host: 'mail.mizbanplast.ir',
+        port: 465,
+        secure: true, // true for 465, false for other ports
+        auth: {
+            user: emailMain,
+            pass
+        },
+        tls: {
+            // do not fail on invalid certs
+            rejectUnauthorized: false
+        }
+    });
+
+    var handlebarsOptions = {
+        viewEngine: {
+            extName: '.handlebars',
+            partialsDir: path.resolve(__dirname, '../templates'),
+            layoutsDir: path.resolve(__dirname, '../templates'),
+            defaultLayout: 'reset-password-email.handlebars'
+        },
+        viewPath: path.resolve(__dirname, '../templates'),
+        extName: '.handlebars'
+    };
+
+    transporter.use('compile', hbs(handlebarsOptions));
+
+    var mailOptions = {
+        from: emailMain,
+        to: user.email,
+        template: 'reset-password-email',
+        subject: 'تغییر کلمه عبور',
+        context: {
+            name: user.first_name,
+            publicurl: 'https://api.mizbanplast.ir/images/logo.png'
+        }
+    };
+    transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(
+                'Email sent: ' + info.response + user.email + mailOptions.to
+            );
+        }
+    });
+};
+
+const sendSignUpEmail = user => {
+    var transporter = nodemailer.createTransport({
+        host: 'mail.mizbanplast.ir',
+        port: 465,
+        secure: true, // true for 465, false for other ports
+        auth: {
+            user: emailMain,
+            pass
+        },
+        tls: {
+            // do not fail on invalid certs
+            rejectUnauthorized: false
+        }
+    });
+
+    var handlebarsOptions = {
+        viewEngine: {
+            extName: '.handlebars',
+            partialsDir: path.resolve(__dirname, '../templates'),
+            layoutsDir: path.resolve(__dirname, '../templates'),
+            defaultLayout: 'signup-user.handlebars'
+        },
+        //viewEngine: 'handlebars',
+        viewPath: path.resolve(__dirname, '../templates'),
+        extName: '.handlebars'
+    };
+
+    transporter.use('compile', hbs(handlebarsOptions));
+
+    var mailOptions = {
+        from: emailMain,
+        to: user.email,
+        bcc: 'support@mizbanplast.ir',
+        template: 'signup-user',
+        subject: 'ثبت نام کاربر جدید',
+        context: {
+            name: user.first_name,
+            publicurl: 'https://api.mizbanplast.ir/images/logo.png'
+        }
+    };
+    transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(
+                'Email sent: ' + info.response + user.email + mailOptions.to
+            );
+        }
+    });
+};
+
+const sendEditInformationEmail = user => {
+    var transporter = nodemailer.createTransport({
+        host: 'mail.mizbanplast.ir',
+        port: 465,
+        secure: true, // true for 465, false for other ports
+        auth: {
+            user: emailMain,
+            pass
+        },
+        tls: {
+            // do not fail on invalid certs
+            rejectUnauthorized: false
+        }
+    });
+
+    var handlebarsOptions = {
+        viewEngine: {
+            extName: '.handlebars',
+            partialsDir: path.resolve(__dirname, '../templates'),
+            layoutsDir: path.resolve(__dirname, '../templates'),
+            defaultLayout: 'edit-information.handlebars'
+        },
+        //viewEngine: 'handlebars',
+        viewPath: path.resolve(__dirname, '../templates'),
+        extName: '.handlebars'
+    };
+
+    transporter.use('compile', hbs(handlebarsOptions));
+
+    var mailOptions = {
+        from: emailMain,
+        to: user.email,
+        template: 'edit-information',
+        subject: 'ویرایش اطلاعات کاربری',
+        context: {
+            name: user.first_name,
+            publicurl: 'https://api.mizbanplast.ir/images/logo.png'
+        }
+    };
+    transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(
+                'Email sent: ' + info.response + user.email + mailOptions.to
+            );
         }
     });
 };
@@ -412,22 +510,18 @@ userSchema.methods.generateAuthToken = function() {
     });
 };
 
-// userSchema.pre('save', function(next) {
-//     let user = this;
-
-//     next();
-// });
-
 let User = mongoose.model('User', userSchema);
 
 module.exports = {
     User,
     validate,
     validatePassword,
-    sendMail,
     validateEmail,
     sendForgotEmail,
     validatePasswordWhenReset,
     validateWhenEdit,
-    validateAddress
+    validateAddress,
+    sendChangePasswordEmail,
+    sendEditInformationEmail,
+    sendSignUpEmail
 };

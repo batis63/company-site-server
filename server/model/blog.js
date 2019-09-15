@@ -105,13 +105,13 @@ let blogSchema = new mongoose.Schema({
         {
             content: {
                 type: String,
-                required: true,
-                minlength: 10
+                required: false,
+                minlength: 0,
+                default: ''
             },
             imageUrl: {
                 type: String,
                 required: false,
-
                 maxlength: 200
             },
             order: {
@@ -122,7 +122,7 @@ let blogSchema = new mongoose.Schema({
             sectionType: {
                 type: String,
                 required: false,
-                maxlength: 1000
+                maxlength: 10
             }
         }
     ]
@@ -160,8 +160,8 @@ const validate = blog => {
 let validateSections = section => {
     let schema = {
         content: Joi.string()
-            .min(10)
-            .required(),
+            .min(0)
+            .allow(''),
         imageUrl: Joi.string()
             .uri()
             .allow(''),

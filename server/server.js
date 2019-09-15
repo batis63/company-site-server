@@ -19,6 +19,7 @@ const files = require('./routes/files');
 const requestIp = require('request-ip');
 const app = express();
 const publicImages = express.static(join(__dirname, './images'));
+const publicFonts = express.static(join(__dirname, './fonts'));
 app.use(cookieParser());
 app.use(express.json());
 app.use(cors());
@@ -43,6 +44,7 @@ app.use('/api/files', files);
 app.use('/api/newsletter', newsletter);
 app.use('/api/states', states);
 app.use('/images', publicImages);
+app.use('/fonts', publicFonts);
 app.use('/api/login', login);
 
 process.env.sessionID = crypto.randomBytes(32).toString('base64');

@@ -6,12 +6,14 @@ const {
     User,
     validate,
     validatePassword,
-    sendMail,
     validateEmail,
     sendForgotEmail,
     validatePasswordWhenReset,
     validateWhenEdit,
-    validateAddress
+    validateAddress,
+    sendChangePasswordEmail,
+    sendSignUpEmail,
+    sendEditInformationEmail
 } = require('../model/user');
 
 router.post('/signup', async (req, res) => {
@@ -33,7 +35,7 @@ router.post('/signup', async (req, res) => {
         });
 
         await user.save();
-        sendMail('signup', user);
+        sendSignUpEmail(user);
 
         res.status(200).send(user);
     } catch (error) {
@@ -61,7 +63,7 @@ router.post('/resetpassword', async (req, res) => {
             reset_password_expires: null
         }).then(() => {
             res.status(200).send(user);
-            sendMail('changepassword', user);
+            sendChangePasswordEmail(user);
         });
     } catch (error) {
         return res.status(400).send('token is expired');
@@ -84,7 +86,7 @@ router.get('/validateTokenOfResetPassword', async (req, res) => {
 
 router.post('/forgotpassword', async (req, res) => {
     const { error } = validateEmail(req.body);
-    if (!error) return res.status(400).send('ایمیل وارد شده معتبر نمیباشد');
+    if (error) return res.status(400).send('ایمیل وارد شده معتبر نمیباشد');
     try {
         let user = await User.findOne({
             email: req.body.email
@@ -133,7 +135,7 @@ router.post('/changepassword', async (req, res) => {
         User.findByIdAndUpdate(user._id, { password: cryptPassword }).then(
             () => {
                 res.status(200).send(user);
-                sendMail('changepassword', user);
+                sendChangePasswordEmail(user);
             }
         );
     } catch (error) {
@@ -180,7 +182,7 @@ router.post('/editUserInformation', async (req, res) => {
             mobile: model.mobile
         }).then(() => {
             res.status(200).send(user);
-            sendMail('editInformation', user);
+            sendEditInformationEmail(user);
         });
     } catch (error) {
         return res.status(400).send('token is expired');

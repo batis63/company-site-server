@@ -111,16 +111,7 @@ router.post('/removeblog', async (req, res) => {
 
 //#region getoneblog
 router.get('/getoneblog', async (req, res) => {
-    let token = req.header('x-auth');
-    if (!token) return res.status(400).send('token not exist');
-
     try {
-        let user = await User.findByToken(token);
-        if (!user) return res.status(400).send('token not exist');
-        if (user.user_type !== 'admin') {
-            return res.status(401).send('User Unauthorized');
-        }
-
         let blog = await Blog.findById(req.query.id);
         if (!blog) return res.status(400).send('اطلاعات یافت نشد');
 
@@ -130,6 +121,33 @@ router.get('/getoneblog', async (req, res) => {
     }
 });
 //#endregion getOneBlog
+
+//#region getoneclblog
+router.get('/getoneclblog', async (req, res) => {
+    try {
+        let blog = await Blog.findById(req.query.id);
+        if (!blog) return res.status(400).send('اطلاعات یافت نشد');
+
+        let comments = [];
+        blog.comments.forEach(element => {
+            let newElement = _.pick(element, [
+                'insertDateComment',
+                'isPublished',
+                'reply',
+                'replyDate',
+                'comment',
+                'name'
+            ]);
+            comments.push(newElement);
+        });
+
+        blog.comments = comments;
+        res.status(200).send(blog);
+    } catch (error) {
+        return res.status(400).send('data not valid');
+    }
+});
+//#endregion getoneclblog
 
 //#region getoneSectionblog
 router.get('/getonesectionblog', async (req, res) => {
