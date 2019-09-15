@@ -50,15 +50,17 @@ let blogSchema = new mongoose.Schema({
         required: false,
         trim: true,
         minlength: 2,
-        maxlength: 100
+        maxlength: 100,
+        default: ''
     },
     downloadLink: {
         type: String,
         required: false,
-        trim: true
+        trim: true,
+        default: ''
     },
     isPublished: { type: Boolean, required: true, default: false },
-    shortLink: { type: String, required: false, maxlength: 50 },
+    shortLink: { type: String, required: false, maxlength: 50, default: '' },
     comments: [
         {
             insertDateComment: {

@@ -65,8 +65,8 @@ router.post('/editblog', async (req, res) => {
             userName: user.first_name + ' ' + user.last_name,
             userIp: ip,
             tags: req.body.tags,
-            downloadLink: req.body.downloadLink,
-            shortLink: req.body.shortLink,
+            downloadLink: req.body.downloadLink || '',
+            shortLink: req.body.shortLink || '',
             isPublished: req.body.isPublished
         };
         const { error } = validate(model);
