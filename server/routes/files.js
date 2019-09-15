@@ -21,9 +21,13 @@ router.get('/getimagedirectoryitems', async (req, res) => {
         }
         const directory = req.query.directory;
         const path = join(
-            appRoot + '/server',
+            appRoot + process.env.ROOT_PATH,
             `./images${directory === undefined ? '' : directory}`
         );
+        fs.writeFile('message.txt', path, err => {
+            if (err) throw err;
+            console.log('The file has been saved!');
+        });
         fs.readdir(path, function(err, items) {
             res.status(200).send(items);
         });
