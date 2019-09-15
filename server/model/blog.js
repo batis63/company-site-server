@@ -50,7 +50,7 @@ let blogSchema = new mongoose.Schema({
         required: false,
         trim: true,
         minlength: 2,
-        maxlength: 100,
+        maxlength: 1000,
         default: ''
     },
     downloadLink: {
@@ -145,7 +145,7 @@ const validate = blog => {
         userIp: Joi.string().required(),
         tags: Joi.string()
             .min(2)
-            .max(100),
+            .max(1000),
         downloadLink: Joi.string()
             .uri()
             .allow(''),
