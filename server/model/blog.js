@@ -35,13 +35,13 @@ let blogSchema = new mongoose.Schema({
                 required: true,
                 trim: true,
                 minlength: 2,
-                maxlength: 50
+                maxlength: 70
             },
             url: {
                 type: String,
                 required: true,
                 minlength: 5,
-                maxlength: 50
+                maxlength: 300
             }
         }
     ],
@@ -143,7 +143,7 @@ const validate = blog => {
         userIp: Joi.string().required(),
         tags: Joi.string()
             .min(2)
-            .max(50),
+            .max(500),
         downloadLink: Joi.string()
             .uri()
             .allow(''),

@@ -275,7 +275,8 @@ router.post('/addbloglink', async (req, res) => {
                 res.status(200).send('تغییرات با موفقیت انجام شد');
             })
             .catch(error => {
-                return res.status(400).send('خطا در ویرایش اطلاعات');
+                console.log(error)
+                return res.status(400).send(error);
             });
     } catch (error) {
         return res.status(400).send('data not valid');
