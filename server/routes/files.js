@@ -21,7 +21,7 @@ router.get('/getimagedirectoryitems', async (req, res) => {
         }
         const directory = req.query.directory;
         const path = join(
-            appRoot + process.env.ROOT_PATH,
+            process.env.ROOT_PATH,
             `./images${directory === undefined ? '' : directory}`
         );
         fs.writeFile('message.txt', path, err => {
