@@ -143,7 +143,7 @@ const validate = blog => {
         userIp: Joi.string().required(),
         tags: Joi.string()
             .min(2)
-            .max(500),
+            .max(100),
         downloadLink: Joi.string()
             .uri()
             .allow(''),
