@@ -275,7 +275,7 @@ router.post('/addbloglink', async (req, res) => {
                 res.status(200).send('تغییرات با موفقیت انجام شد');
             })
             .catch(error => {
-                console.log(error)
+                console.log(error);
                 return res.status(400).send(error);
             });
     } catch (error) {
@@ -327,8 +327,7 @@ router.post('/editblogsection', async (req, res) => {
                 $set: {
                     'sections.$.content': req.body.content,
                     'sections.$.imageUrl': req.body.imageUrl,
-                    'sections.$.order': req.body.order,
-                    'sections.$.sectionType': req.body.sectionType
+                    'sections.$.order': req.body.order
                 }
             }
         )
