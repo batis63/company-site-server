@@ -31,25 +31,23 @@ let productSchema = new mongoose.Schema({
         required: true,
         default: 1
     },
-    discount: [
-        {
-            fromdate: {
-                _id: false,
-                type: Date,
-                require: false
-            },
-            todate: {
-                _id: false,
-                type: Date,
-                require: false
-            },
-            discountvalue: {
-                _id: false,
-                type: Number,
-                require: false
-            }
+    discount: {
+        fromdate: {
+            _id: false,
+            type: Date,
+            require: false
+        },
+        todate: {
+            _id: false,
+            type: Date,
+            require: false
+        },
+        discountvalue: {
+            _id: false,
+            type: Number,
+            require: false
         }
-    ],
+    },
     description: {
         type: String,
         required: true,
@@ -68,7 +66,7 @@ let productSchema = new mongoose.Schema({
     insertdate: {
         type: Date,
         required: true,
-        default: new Date().getDate()
+        default: new Date()
     },
     madein: {
         type: String,

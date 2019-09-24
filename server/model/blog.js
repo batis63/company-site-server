@@ -6,7 +6,7 @@ let blogSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 2,
-        maxlength: 70,
+        maxlength: 200,
         trim: true
     },
     userName: {
@@ -49,7 +49,7 @@ let blogSchema = new mongoose.Schema({
         type: String,
         required: false,
         trim: true,
-        minlength: 2,
+
         maxlength: 1000,
         default: ''
     },
@@ -136,7 +136,7 @@ const validate = blog => {
     const schema = {
         title: Joi.string()
             .min(2)
-            .max(70)
+            .max(200)
             .required(),
         userName: Joi.string()
             .min(2)
@@ -144,8 +144,8 @@ const validate = blog => {
             .required(),
         userIp: Joi.string().required(),
         tags: Joi.string()
-            .min(2)
-            .max(1000),
+            .max(1000)
+            .allow(''),
         downloadLink: Joi.string()
             .uri()
             .allow(''),
